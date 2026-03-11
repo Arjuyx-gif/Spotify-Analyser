@@ -1,3 +1,4 @@
+# Spotify Listening Analyzer - Data Processing
 """
 Data processing and analysis module.
 Processes raw Spotify API data into dashboard-ready analytics.
