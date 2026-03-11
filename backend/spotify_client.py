@@ -1,3 +1,4 @@
+# Spotify API Client - Handles OAuth and data fetching
 """
 Spotify Web API client wrapper.
 Handles authentication token exchange and data fetching from Spotify endpoints.
