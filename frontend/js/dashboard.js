@@ -1,3 +1,4 @@
+// Spotify Analyzer - Dashboard Charts v2
 /**
  * Spotify Listening Analyzer — dashboard.js
  * Fetches processed data from the API and renders Chart.js visualizations.
