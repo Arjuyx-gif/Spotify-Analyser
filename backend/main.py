@@ -1,3 +1,4 @@
+# FastAPI Main Application - Spotify Analyzer Backend
 """
 FastAPI main application.
 Handles routing, Spotify OAuth flow, and serves the frontend.
