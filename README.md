@@ -43,52 +43,6 @@ spotify-analyzer/
 └── README.md
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Docker** (recommended) or **Python 3.11+**
-- A **Spotify Developer Account**
-
-### 1. Create a Spotify App
-
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Click **Create App**
-3. Set the **Redirect URI** to: `http://localhost:8000/api/callback`
-4. Note your **Client ID** and **Client Secret**
-
-### 2. Configure Environment
-
-```bash
-cd spotify-analyzer
-cp .env.example .env
-```
-
-Edit `.env` with your Spotify credentials:
-
-```env
-SPOTIFY_CLIENT_ID=your_actual_client_id
-SPOTIFY_CLIENT_SECRET=your_actual_client_secret
-SPOTIFY_REDIRECT_URI=http://localhost:8000/api/callback
-SECRET_KEY=any-random-secret-string
-```
-
-### 3a. Run with Docker (Recommended)
-
-```bash
-docker-compose up --build
-```
-
-### 3b. Run Locally (Without Docker)
-
-```bash
-pip install -r requirements.txt
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### 4. Open the App
-
-Visit **http://localhost:8000** in your browser and click **Continue with Spotify**.
 
 ## 📊 Dashboard Visualizations
 
