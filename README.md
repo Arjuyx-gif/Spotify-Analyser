@@ -63,16 +63,6 @@ spotify-analyzer/
 - **Auth**: Spotify OAuth 2.0 (Authorization Code Flow)
 - **Containerization**: Docker, docker-compose
 
-## 📝 API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | Login page |
-| `GET` | `/dashboard` | Dashboard page (requires auth) |
-| `GET` | `/api/login` | Redirects to Spotify auth |
-| `GET` | `/api/callback` | OAuth callback handler |
-| `GET` | `/api/logout` | Clears session and redirects |
-| `GET` | `/api/dashboard-data` | Returns all analytics as JSON |
 
 ## 📄 License
 
