@@ -575,7 +575,6 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 }
-
 @media (max-width: 768px) {
     .navbar {
         padding: 12px 20px;
@@ -599,7 +598,6 @@ body {
         grid-template-columns: 1fr 1fr;
     }
 }
-
 @media (max-width: 480px) {
     .stats-bar {
         grid-template-columns: 1fr 1fr;
