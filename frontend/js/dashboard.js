@@ -137,6 +137,8 @@ function renderTopArtistsChart(artists) {
                 borderSkipped: false,
             }],
         },
+
+        
         options: {
             indexAxis: 'y',
             plugins: {
@@ -161,6 +163,7 @@ function renderTopArtistsChart(artists) {
                     ticks: { color: '#e4e4e7', font: { weight: '600' } },
                 },
             },
+            
         },
     });
 }
