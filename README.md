@@ -43,7 +43,6 @@ spotify-analyzer/
 └── README.md
 ```
 
-
 ## 📊 Dashboard Visualizations
 
 | Chart | Description |
