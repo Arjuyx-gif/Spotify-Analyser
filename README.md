@@ -63,6 +63,7 @@ spotify-analyzer/
 - **Containerization**: Docker, docker-compose
 
 
+
 ## 📄 License
 
 MIT License — feel free to use, modify, and distribute.
