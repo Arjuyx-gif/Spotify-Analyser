@@ -557,6 +557,7 @@ function renderRadarChart(averages) {
 
 // ─── Chart 7: Day of Week Bar ────────────────────────────────
 
+
 function renderDayChart(activityByDay) {
     const ctx = document.getElementById('dayChart').getContext('2d');
     const labels = Object.keys(activityByDay);
@@ -687,6 +688,7 @@ function renderMoodProfile(moodProfile) {
 
 // ─── Recommendations Grid ─────────────────────────────────────
 
+
 function renderRecommendations(tracks) {
     const section = document.getElementById('recs-section');
     const grid = document.getElementById('recs-grid');
@@ -712,3 +714,5 @@ function renderRecommendations(tracks) {
     `;
     }).join('');
 }
+
+
