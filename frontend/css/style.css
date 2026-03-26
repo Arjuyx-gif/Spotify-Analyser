@@ -551,7 +551,151 @@ body {
     max-width: 260px;
 }
 
+/* ─── Mood & DNA Card ─────────────────────────── */
+
+.mood-section {
+    margin-bottom: 32px;
+    animation: fadeInUp 0.5s ease-out 0.1s both;
+}
+
+.mood-card {
+    padding: 32px 36px;
+}
+
+.mood-card-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 48px;
+    flex-wrap: wrap;
+}
+
+.mood-left {
+    flex: 1;
+    min-width: 220px;
+}
+
+.mood-right {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mood-badge {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, rgba(29, 185, 84, 0.2), rgba(139, 92, 246, 0.2));
+    border: 1px solid rgba(29, 185, 84, 0.4);
+    border-radius: 50px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+    box-shadow: 0 0 24px rgba(29, 185, 84, 0.15);
+}
+
+.mood-desc {
+    margin-top: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 340px;
+}
+
+.mood-traits-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.mood-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.trait-pill {
+    display: inline-block;
+    padding: 8px 18px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #c4b5fd;
+    transition: var(--transition);
+}
+
+.trait-pill:hover {
+    background: rgba(139, 92, 246, 0.25);
+    transform: translateY(-2px);
+}
+
+/* ─── Recommendations Grid ────────────────────── */
+
+.recs-section {
+    margin-bottom: 40px;
+    animation: fadeInUp 0.5s ease-out 0.5s both;
+}
+
+.recs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.rec-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: var(--transition);
+    display: block;
+}
+
+.rec-card:hover {
+    border-color: rgba(29, 185, 84, 0.25);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    transform: translateY(-4px);
+}
+
+.rec-art {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+
+.rec-info {
+    padding: 12px;
+}
+
+.rec-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.rec-artist {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ─── Footer ──────────────────────────────────── */
+
 
 .dashboard-footer {
     text-align: center;

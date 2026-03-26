@@ -122,6 +122,9 @@ async def dashboard_data(request: Request):
         user_profile = await _safe_fetch(
             "user_profile", spotify_client.get_user_profile(token), {})
 
+        # Seed IDs for recommendations (top 5 tracks)
+        seed_ids = [t["id"] for t in top_tracks_raw.get("items", [])[:5] if t.get("id")]
+
         logger.info(f"Fetched: {len(top_artists_raw.get('items', []))} artists, "
                      f"{len(top_tracks_raw.get('items', []))} tracks, "
                      f"{len(recently_played_raw.get('items', []))} recent plays")
@@ -202,8 +205,38 @@ async def dashboard_data(request: Request):
         heatmap = analyzer.process_heatmap_data(recently_played_raw)
         audio_features = analyzer.process_audio_features(audio_features_raw)
 
+        # ── Mood Profile (no extra API call) ──
+        if audio_features and audio_features.get("averages"):
+            mood_profile = analyzer.compute_mood_profile(audio_features["averages"])
+        else:
+            mood_profile = {
+                "mood": "Not enough data",
+                "mood_desc": "Listen to more music to unlock your mood profile.",
+                "traits": [],
+            }
+
+        # ── Recommendations (seeded from top tracks) ──
+        recommendations = []
+        if seed_ids:
+            recs_raw = await _safe_fetch(
+                "recommendations", spotify_client.get_recommendations(token, seed_ids), {"tracks": []})
+            if not recs_raw or not recs_raw.get("tracks"):
+                logger.warning("Spotify /recommendations returned no data — may require Extended Quota Mode")
+            else:
+                for t in (recs_raw.get("tracks") or []):
+                    album = t.get("album", {})
+                    recommendations.append({
+                        "id": t.get("id", ""),
+                        "name": t.get("name", "Unknown"),
+                        "artists": [a["name"] for a in t.get("artists", [])],
+                        "album_art": album["images"][0]["url"] if album.get("images") else None,
+                        "spotify_url": t.get("external_urls", {}).get("spotify", "#"),
+                    })
+
         logger.info(f"Genre distribution: {genre_distribution}")
         logger.info(f"Audio averages: {audio_features.get('averages', {})}")
+        logger.info(f"Mood profile: {mood_profile}")
+        logger.info(f"Recommendations: {len(recommendations)} tracks")
         logger.info(f"Top artists processed (first 3): {[{'name': a['name'], 'popularity': a['popularity'], 'genres': a['genres']} for a in top_artists[:3]]}")
 
         # Handle user image safely
@@ -225,6 +258,8 @@ async def dashboard_data(request: Request):
             "activity_by_day": activity_by_day,
             "heatmap": heatmap,
             "audio_features": audio_features,
+            "mood_profile": mood_profile,
+            "recommendations": recommendations,
         })
 
     except HTTPException:

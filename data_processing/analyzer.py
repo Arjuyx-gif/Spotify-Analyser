@@ -305,3 +305,32 @@ def process_top_tracks(data: dict) -> list[dict]:
             "popularity": item.get("popularity", 0),
         })
     return tracks
+
+
+def compute_mood_profile(averages: dict) -> dict:
+    """Classify the user's listening mood and Music DNA traits from audio feature averages."""
+    energy = averages.get("energy", 0)
+    valence = averages.get("valence", 0)
+    danceability = averages.get("danceability", 0)
+    acousticness = averages.get("acousticness", 0)
+
+    if energy > 0.6 and valence > 0.6:
+        mood, mood_desc = "Hyped 🔥", "You love high-energy, feel-good bangers."
+    elif energy > 0.6 and valence <= 0.6:
+        mood, mood_desc = "Intense 💢", "You gravitate toward powerful but darker music."
+    elif energy <= 0.6 and valence > 0.6:
+        mood, mood_desc = "Chill & Happy ☀️", "Laid-back yet positive — the good vibes listener."
+    else:
+        mood, mood_desc = "Melancholic 🌙", "You lean toward calm, emotional, introspective music."
+
+    traits = []
+    if danceability > 0.65: traits.append("Dance Floor Ready 🕺")
+    if acousticness > 0.4:  traits.append("Acoustic Soul 🎸")
+    if energy > 0.7:        traits.append("Pure Energy ⚡")
+    if valence > 0.65:      traits.append("Positivity Magnet 😊")
+    if averages.get("speechiness", 0) > 0.15: traits.append("Word Lover 🎤")
+    if averages.get("instrumentalness", 0) > 0.1: traits.append("Instrumental Taste 🎻")
+    if not traits: traits.append("Balanced Listener 🎧")
+
+    return {"mood": mood, "mood_desc": mood_desc, "traits": traits[:3]}
+

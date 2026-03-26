@@ -107,3 +107,15 @@ async def get_artists(token: str, artist_ids: list[str]) -> dict:
 async def get_user_profile(token: str) -> dict:
     """Fetch the current user's profile."""
     return await _get(token, "/me")
+
+
+async def get_recommendations(token: str, seed_tracks: list[str], limit: int = 6) -> dict:
+    """Fetch track recommendations based on seed tracks.
+    Note: Requires Extended Quota Mode on Spotify Developer Dashboard.
+    Returns empty result if forbidden (403)."""
+    if not seed_tracks:
+        return {"tracks": []}
+    ids_str = ",".join(seed_tracks[:5])
+    result = await _get(token, "/recommendations", {"seed_tracks": ids_str, "limit": limit})
+    return result or {"tracks": []}
+

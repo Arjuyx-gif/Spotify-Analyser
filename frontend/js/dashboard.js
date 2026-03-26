@@ -79,9 +79,20 @@ async function fetchDashboardData() {
         // Render tracks list
         renderTracksList(data.top_tracks);
 
+        // Render new features
+        renderMoodProfile(data.mood_profile);
+        renderRecommendations(data.recommendations);
+
         // Show dashboard
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
+
+        // Store data globally and wire up MOODIFY Story
+        window.dashboardData = data;
+        const storyBtn = document.getElementById('story-btn');
+        if (storyBtn) {
+            storyBtn.addEventListener('click', () => initStory(window.dashboardData));
+        }
 
     } catch (err) {
         console.error('Dashboard data error:', err);
@@ -606,4 +617,98 @@ function renderTracksList(tracks) {
             <span class="track-popularity">${track.popularity}</span>
         </div>
     `).join('');
+}
+
+// ─── Mood Profile & Music DNA ────────────────────────────────
+
+function renderMoodProfile(moodProfile) {
+    const container = document.getElementById('mood-card-content');
+    if (!container || !moodProfile) return;
+
+    const traits = (moodProfile.traits && moodProfile.traits.length)
+        ? moodProfile.traits
+        : ['Balanced Listener 🎧'];
+
+    const traitPillsHTML = traits.map(t => `
+        <span style="
+            display: inline-block;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 500;
+        ">${t}</span>
+    `).join('');
+
+    container.innerHTML = `
+        <div style="padding: 24px;">
+            <h2 class="chart-title">🧬 Your Music DNA</h2>
+            <p class="chart-subtitle">Based on your audio feature averages</p>
+
+            <div style="
+                display: inline-block;
+                margin-top: 12px;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                border-radius: 999px;
+                padding: 10px 20px;
+                font-size: 16px;
+                font-weight: 700;
+                color: #fff;
+                letter-spacing: -0.2px;
+            ">${moodProfile.mood || '—'}</div>
+
+            <p style="
+                margin-top: 10px;
+                font-size: 14px;
+                color: rgba(255,255,255,0.6);
+                line-height: 1.6;
+                max-width: 420px;
+            ">${moodProfile.mood_desc || ''}</p>
+
+            <p style="
+                margin-top: 16px;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #6b6b76;
+                font-weight: 600;
+            ">Your Traits</p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                ${traitPillsHTML}
+            </div>
+        </div>
+    `;
+}
+
+
+// ─── Recommendations Grid ─────────────────────────────────────
+
+function renderRecommendations(tracks) {
+    const section = document.getElementById('recs-section');
+    const grid = document.getElementById('recs-grid');
+
+    if (!tracks || tracks.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    grid.innerHTML = tracks.map(t => {
+        const artists = Array.isArray(t.artists) ? t.artists.join(', ') : t.artists;
+        const imgSrc = t.album_art || 'https://via.placeholder.com/160x160/1a1a2e/1DB954?text=♫';
+        return `
+        <a class="rec-card" href="${t.spotify_url}" target="_blank" rel="noopener noreferrer">
+            <img class="rec-art" src="${imgSrc}" alt="${t.name}" loading="lazy"
+                 onerror="this.src='https://via.placeholder.com/160x160/1a1a2e/1DB954?text=♫'">
+            <div class="rec-info">
+                <div class="rec-name">${t.name}</div>
+                <div class="rec-artist">${artists}</div>
+            </div>
+        </a>
+    `;
+    }).join('');
 }
