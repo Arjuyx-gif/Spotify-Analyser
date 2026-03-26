@@ -96,7 +96,8 @@ async def logout(request: Request):
 async def _safe_fetch(label: str, coro, default=None):
     """Safely fetch data; return default on failure instead of crashing."""
     try:
-        return await coro
+        res = await coro
+        return res if res is not None else default
     except Exception as e:
         logger.error(f"[{label}] fetch failed: {e}")
         return default
