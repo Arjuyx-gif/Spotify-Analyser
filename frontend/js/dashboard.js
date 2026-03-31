@@ -284,50 +284,82 @@ function renderActivityChart(activityByHour) {
 
 // ─── Chart 4: Heatmap (Day × Hour) ──────────────────────────
 
+// Maps a 0–1 intensity to a rich multi-stop color for heatmap cells.
+function heatmapColor(intensity) {
+    if (intensity <= 0)    return 'rgba(255,255,255,0.04)';
+    if (intensity < 0.25)  return `rgba(20,184,166,${0.15 + intensity * 1.2})`; // teal low
+    if (intensity < 0.60)  return `rgba(29,185,84,${0.35 + intensity * 0.8})`;  // green mid
+    return `rgba(${Math.round(29 + (255-29)*(intensity-0.6)/0.4)},${Math.round(185 + (255-185)*(intensity-0.6)/0.4)},${Math.round(84 + (200-84)*(intensity-0.6)/0.4)},1)`; // green→near-white hot
+}
+
 function renderHeatmap(heatmapData) {
     const ctx = document.getElementById('heatmapChart').getContext('2d');
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
-    // Check if chart-matrix plugin is available
+    // Compute max value for normalization and find peak cell
+    const maxVal   = Math.max(...heatmapData.map(d => d.v), 1);
+    const peakCell = heatmapData.reduce((best, d) => d.v > best.v ? d : best, heatmapData[0]);
+
+    // Plugin: draw a ★ on the peak cell
+    const peakPlugin = {
+        id: 'heatmapPeak',
+        afterDatasetsDraw(chart) {
+            const { ctx: c, scales: { x, y } } = chart;
+            const ds = chart.data.datasets[0];
+            const cellW = (chart.chartArea?.width  || 600) / 25;
+            const cellH = (chart.chartArea?.height || 250) / 8;
+            const px = x.getPixelForValue(peakCell.x);
+            const py = y.getPixelForValue(peakCell.y);
+            c.save();
+            c.font = `bold ${Math.round(Math.min(cellW, cellH) * 0.45)}px Inter, sans-serif`;
+            c.fillStyle = '#fff';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.shadowColor = 'rgba(0,0,0,0.6)';
+            c.shadowBlur = 4;
+            c.fillText('★', px, py);
+            c.restore();
+        },
+    };
+
     if (typeof Chart.controllers.matrix !== 'undefined') {
         new Chart(ctx, {
             type: 'matrix',
+            plugins: [peakPlugin],
             data: {
                 datasets: [{
                     label: 'Listening Activity',
-                    data: heatmapData.map(d => ({
-                        x: d.x,
-                        y: d.y,
-                        v: d.v,
-                    })),
+                    data: heatmapData.map(d => ({ x: d.x, y: d.y, v: d.v })),
                     backgroundColor(c) {
-                        const val = c.dataset.data[c.dataIndex]?.v || 0;
-                        const alpha = val === 0 ? 0.05 : Math.min(0.2 + val * 0.25, 1);
-                        return `rgba(29, 185, 84, ${alpha})`;
+                        const v = c.dataset.data[c.dataIndex]?.v ?? 0;
+                        return heatmapColor(v / maxVal);
                     },
-                    borderColor: 'rgba(10, 10, 15, 0.5)',
+                    borderColor: 'rgba(10,10,15,0.6)',
                     borderWidth: 2,
-                    borderRadius: 4,
-                    width: ({ chart }) => (chart.chartArea?.width || 600) / 26,
-                    height: ({ chart }) => (chart.chartArea?.height || 250) / 9,
+                    borderRadius: 5,
+                    width:  ({ chart }) => (chart.chartArea?.width  || 600) / 25,
+                    height: ({ chart }) => (chart.chartArea?.height || 250) / 8,
                 }],
             },
             options: {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(10, 10, 15, 0.9)',
+                        backgroundColor: 'rgba(10,10,15,0.92)',
                         borderColor: COLORS.green,
                         borderWidth: 1,
-                        cornerRadius: 8,
-                        padding: 12,
+                        cornerRadius: 10,
+                        padding: 14,
                         callbacks: {
                             title: () => '',
                             label(c) {
                                 const d = c.dataset.data[c.dataIndex];
-                                const hour = d.x;
-                                const hStr = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
-                                return `${days[d.y]} at ${hStr}: ${d.v} tracks`;
+                                const h = d.x;
+                                const hStr = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h-12} PM`;
+                                const intensity = d.v / maxVal;
+                                const heat = intensity > 0.75 ? '🔥 Peak' : intensity > 0.4 ? '🎵 Active' : d.v > 0 ? '· Occasional' : '· Quiet';
+                                return [`${DAY_NAMES[d.y]} · ${hStr}`, `${d.v} play${d.v !== 1 ? 's' : ''}  ${heat}`];
                             },
                         },
                     },
@@ -336,28 +368,23 @@ function renderHeatmap(heatmapData) {
                     x: {
                         type: 'linear',
                         position: 'bottom',
-                        min: -0.5,
-                        max: 23.5,
+                        min: -0.5, max: 23.5,
                         ticks: {
                             stepSize: 1,
                             color: '#6b6b76',
-                            callback(val) {
-                                return val % 3 === 0 ? (val === 0 ? '12a' : val < 12 ? `${val}a` : val === 12 ? '12p' : `${val - 12}p`) : '';
-                            },
+                            callback: v => (v % 6 === 0) ? (v === 0 ? '12a' : v < 12 ? `${v}a` : v === 12 ? '12p' : `${v-12}p`) : '',
                         },
                         grid: { display: false },
                     },
                     y: {
                         type: 'linear',
                         offset: true,
-                        min: -0.5,
-                        max: 6.5,
+                        min: -0.5, max: 6.5,
                         ticks: {
                             stepSize: 1,
                             color: '#a1a1aa',
-                            callback(val) {
-                                return days[val] || '';
-                            },
+                            font: { weight: '600' },
+                            callback: v => days[v] ?? '',
                         },
                         grid: { display: false },
                     },
@@ -365,60 +392,41 @@ function renderHeatmap(heatmapData) {
             },
         });
     } else {
-        // Fallback: stacked bar chart if matrix plugin not loaded
         renderHeatmapFallback(ctx, heatmapData, days);
     }
 }
 
 function renderHeatmapFallback(ctx, heatmapData, days) {
-    // Convert heatmap data into stacked bar datasets (one per day)
-    const datasets = days.map((day, dayIdx) => {
-        const dayData = heatmapData
-            .filter(d => d.y === dayIdx)
-            .sort((a, b) => a.x - b.x)
-            .map(d => d.v);
-        return {
-            label: day,
-            data: dayData,
-            backgroundColor: CHART_PALETTE[dayIdx] + '99',
-            borderColor: CHART_PALETTE[dayIdx],
-            borderWidth: 1,
-            borderRadius: 3,
-        };
-    });
-
-    const labels = Array.from({ length: 24 }, (_, i) =>
-        i === 0 ? '12a' : i < 12 ? `${i}a` : i === 12 ? '12p' : `${i - 12}p`
+    // Refined fallback: grouped bar chart (cleaner than stacked)
+    const hourLabels = Array.from({ length: 24 }, (_, i) =>
+        i % 6 === 0 ? (i === 0 ? '12a' : i < 12 ? `${i}a` : i === 12 ? '12p' : `${i-12}p`) : ''
     );
+    const datasets = days.map((day, di) => ({
+        label: day,
+        data: Array.from({ length: 24 }, (_, h) => heatmapData.find(d => d.y === di && d.x === h)?.v ?? 0),
+        backgroundColor: CHART_PALETTE[di] + 'bb',
+        borderColor: CHART_PALETTE[di],
+        borderWidth: 1,
+        borderRadius: 3,
+    }));
 
     new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets },
+        data: { labels: hourLabels, datasets },
         options: {
             plugins: {
-                legend: {
-                    position: 'top',
-                    labels: { font: { size: 10 }, padding: 8 },
-                },
+                legend: { position: 'top', labels: { font: { size: 10 }, padding: 8 } },
                 tooltip: {
-                    backgroundColor: 'rgba(10, 10, 15, 0.9)',
+                    backgroundColor: 'rgba(10,10,15,0.9)',
                     borderColor: COLORS.green,
                     borderWidth: 1,
                     cornerRadius: 8,
+                    padding: 12,
                 },
             },
             scales: {
-                x: {
-                    stacked: true,
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#6b6b76' },
-                },
-                y: {
-                    stacked: true,
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#6b6b76', stepSize: 1 },
-                },
+                x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b6b76' } },
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b6b76', stepSize: 1 } },
             },
         },
     });
@@ -426,64 +434,128 @@ function renderHeatmapFallback(ctx, heatmapData, days) {
 
 // ─── Chart 5: Energy vs Valence (Scatter) ────────────────────
 
+// Returns danceability-tier color
+function danceColor(d, alpha = 'bb') {
+    if (d > 0.7) return COLORS.green  + alpha;
+    if (d > 0.5) return COLORS.blue   + alpha;
+    if (d > 0.3) return COLORS.purple + alpha;
+    return COLORS.pink + alpha;
+}
+
 function renderScatterChart(scatter) {
     const ctx = document.getElementById('scatterChart').getContext('2d');
 
+    // Map energy to bubble radius (4–13px) for extra data dimension
+    const radii = scatter.map(s => Math.round(4 + s.energy * 9));
+
+    // Quadrant label plugin
+    const quadrantPlugin = {
+        id: 'scatterQuadrants',
+        beforeDraw(chart) {
+            const { ctx: c, chartArea: a, scales: { x, y } } = chart;
+            if (!a) return;
+            const mx = x.getPixelForValue(0.5);
+            const my = y.getPixelForValue(0.5);
+
+            // Midpoint reference lines
+            c.save();
+            c.setLineDash([4, 6]);
+            c.strokeStyle = 'rgba(255,255,255,0.08)';
+            c.lineWidth = 1;
+            c.beginPath(); c.moveTo(mx, a.top);    c.lineTo(mx, a.bottom); c.stroke();
+            c.beginPath(); c.moveTo(a.left, my);   c.lineTo(a.right, my);  c.stroke();
+            c.setLineDash([]);
+
+            // Quadrant labels
+            const labels = [
+                { text: 'Euphoric',      tx: a.right - 8,  ty: a.top + 14,      align: 'right' },
+                { text: 'Intense',       tx: a.left  + 8,  ty: a.top + 14,      align: 'left'  },
+                { text: 'Calm & Happy',  tx: a.right - 8,  ty: a.bottom - 10,   align: 'right' },
+                { text: 'Melancholic',   tx: a.left  + 8,  ty: a.bottom - 10,   align: 'left'  },
+            ];
+            c.font = '600 11px Inter, sans-serif';
+            c.fillStyle = 'rgba(255,255,255,0.18)';
+            labels.forEach(({ text, tx, ty, align }) => {
+                c.textAlign = align;
+                c.textBaseline = 'top';
+                c.fillText(text, tx, ty);
+            });
+
+            // Mini danceability legend (bottom-right corner)
+            const tiers = [
+                { label: 'High Dance',   color: COLORS.green  },
+                { label: 'Mid Dance',    color: COLORS.blue   },
+                { label: 'Low Dance',    color: COLORS.purple },
+                { label: 'Non-Dance',    color: COLORS.pink   },
+            ];
+            const lx = a.right - 8;
+            const ly = a.bottom - 10 - tiers.length * 18;
+            c.font = '500 10px Inter, sans-serif';
+            tiers.forEach(({ label, color }, i) => {
+                const rowY = ly + i * 17;
+                c.beginPath();
+                c.arc(lx - 68, rowY + 5, 5, 0, Math.PI * 2);
+                c.fillStyle = color + 'cc';
+                c.fill();
+                c.fillStyle = 'rgba(255,255,255,0.4)';
+                c.textAlign = 'left';
+                c.textBaseline = 'top';
+                c.fillText(label, lx - 60, rowY);
+            });
+
+            c.restore();
+        },
+    };
+
     new Chart(ctx, {
         type: 'scatter',
+        plugins: [quadrantPlugin],
         data: {
             datasets: [{
                 label: 'Songs',
                 data: scatter.map(s => ({ x: s.valence, y: s.energy })),
-                backgroundColor: scatter.map(s => {
-                    // Color by danceability
-                    const d = s.danceability;
-                    if (d > 0.7) return COLORS.green + 'bb';
-                    if (d > 0.5) return COLORS.blue + 'bb';
-                    if (d > 0.3) return COLORS.purple + 'bb';
-                    return COLORS.pink + 'bb';
-                }),
-                borderColor: scatter.map(s => {
-                    const d = s.danceability;
-                    if (d > 0.7) return COLORS.green;
-                    if (d > 0.5) return COLORS.blue;
-                    if (d > 0.3) return COLORS.purple;
-                    return COLORS.pink;
-                }),
-                borderWidth: 1.5,
-                pointRadius: 6,
-                pointHoverRadius: 9,
+                backgroundColor: scatter.map(s => danceColor(s.danceability)),
+                borderColor:     scatter.map(s => danceColor(s.danceability, 'ff')),
+                borderWidth: 1,
+                pointRadius:      radii,
+                pointHoverRadius: radii.map(r => r + 3),
             }],
         },
         options: {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(10, 10, 15, 0.9)',
+                    backgroundColor: 'rgba(10,10,15,0.92)',
                     borderColor: COLORS.green,
                     borderWidth: 1,
-                    cornerRadius: 8,
-                    padding: 12,
+                    cornerRadius: 10,
+                    padding: 14,
                     callbacks: {
+                        title: () => '',
                         label(c) {
-                            const pt = scatter[c.dataIndex];
-                            return `Energy: ${(pt.energy * 100).toFixed(0)}% | Valence: ${(pt.valence * 100).toFixed(0)}% | Dance: ${(pt.danceability * 100).toFixed(0)}%`;
+                            const s = scatter[c.dataIndex];
+                            const quadrant =
+                                s.energy > 0.5 && s.valence > 0.5 ? 'Euphoric'     :
+                                s.energy > 0.5 && s.valence <= 0.5 ? 'Intense'     :
+                                s.energy <= 0.5 && s.valence > 0.5 ? 'Calm & Happy' : 'Melancholic';
+                            return [
+                                `Energy: ${(s.energy * 100).toFixed(0)}%  ·  Valence: ${(s.valence * 100).toFixed(0)}%`,
+                                `Dance: ${(s.danceability * 100).toFixed(0)}%  ·  ${quadrant}`,
+                            ];
                         },
                     },
                 },
             },
             scales: {
                 x: {
-                    title: { display: true, text: 'Valence (Positiveness)', color: '#a1a1aa', font: { weight: '600' } },
-                    min: 0,
-                    max: 1,
+                    title: { display: true, text: 'Valence (Positivity →)', color: '#a1a1aa', font: { weight: '600', size: 12 } },
+                    min: 0, max: 1,
                     grid: { color: 'rgba(255,255,255,0.04)' },
                     ticks: { color: '#6b6b76', callback: v => `${(v * 100).toFixed(0)}%` },
                 },
                 y: {
-                    title: { display: true, text: 'Energy', color: '#a1a1aa', font: { weight: '600' } },
-                    min: 0,
-                    max: 1,
+                    title: { display: true, text: 'Energy →', color: '#a1a1aa', font: { weight: '600', size: 12 } },
+                    min: 0, max: 1,
                     grid: { color: 'rgba(255,255,255,0.04)' },
                     ticks: { color: '#6b6b76', callback: v => `${(v * 100).toFixed(0)}%` },
                 },
